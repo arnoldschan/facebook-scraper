@@ -52,7 +52,7 @@ class FacebookScraper:
         "Accept": "*/*",
         "Connection": "keep-alive",
         "Accept-Encoding": "gzip,deflate",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
+        "User-Agent": "Mozilla/5.0 (Linux; U; Android 2.2; en-us; DROID2 GLOBAL Build/S273) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1",
     }
     have_checked_locale = False
 
@@ -869,6 +869,8 @@ class FacebookScraper:
                 response = self.session.post(url=url, **kwargs)
             else:
                 response = self.session.get(url=url, **self.requests_kwargs, **kwargs)
+                self.response_2 = response
+
             DEBUG = False
             if DEBUG:
                 for filename in os.listdir("."):
@@ -1017,7 +1019,6 @@ class FacebookScraper:
         max_past_limit=5,
         **kwargs,
     ):
-
         if options is None:
             options = {}
         elif isinstance(options, set):
@@ -1034,7 +1035,6 @@ class FacebookScraper:
 
         # if latest_date is specified, iterate until the date is reached n times in a row (recurrent_past_posts)
         if latest_date is not None:
-
             # Pinned posts repeat themselves over time, so ignore them
             pinned_posts = []
 
@@ -1048,7 +1048,6 @@ class FacebookScraper:
             done = False
 
             for page in iter_pages_fn():
-
                 for post_element in page:
                     try:
                         post = extract_post_fn(post_element, options=options, request_fn=self.get)
