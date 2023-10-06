@@ -56,7 +56,7 @@ class FacebookScraper:
     }
     have_checked_locale = False
 
-    def __init__(self, session=None, requests_kwargs=None):
+    def __init__(self, session=None, requests_kwargs=None, raise_if_checkpoint=False):
         if session is None:
             session = HTMLSession()
             session.headers.update(self.default_headers)
@@ -67,6 +67,7 @@ class FacebookScraper:
         self.session = session
         self.requests_kwargs = requests_kwargs
         self.request_count = 0
+        self.raise_if_checkpoint = raise_if_checkpoint
 
     def set_user_agent(self, user_agent):
         self.session.headers["User-Agent"] = user_agent
@@ -975,6 +976,8 @@ class FacebookScraper:
             raise exceptions.LoginError(login_error.text)
 
         if "enter login code to continue" in response.text.lower():
+            if self.raise_if_checkpoint:
+                raise exceptions.NeedLoginApproval("Need 2FA Code")
             token = input("Enter 2FA token: ")
             response = self.submit_form(response, {"approvals_code": token})
             strong = response.html.find("strong", first=True)
@@ -990,6 +993,8 @@ class FacebookScraper:
                 response = self.submit_form(response, {"name_action_selected": "save_device"})
 
         if "login approval needed" in response.text.lower() or "checkpoint" in response.url:
+            if self.raise_if_checkpoint:
+                raise exceptions.NeedLoginApproval("Login Approval Needed")
             input(
                 "Login approval needed. From a browser logged into this account, approve this login from your notifications. Press enter once you've approved it."
             )

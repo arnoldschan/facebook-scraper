@@ -38,3 +38,9 @@ class UnexpectedResponse(Exception):
     '''Facebook served something weird'''
 
     pass
+
+
+class NeedLoginApproval(Exception):
+    '''Login approval needed. From a browser logged into this account, approve this login from your notifications.'''
+
+    pass
