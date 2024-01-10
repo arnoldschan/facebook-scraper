@@ -52,7 +52,8 @@ class FacebookScraper:
         "Accept": "*/*",
         "Connection": "keep-alive",
         "Accept-Encoding": "gzip,deflate",
-        "User-Agent": "Mozilla/5.0 (Linux; U; Android 2.2; en-us; DROID2 GLOBAL Build/S273) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
+
     }
     have_checked_locale = False
 
@@ -870,6 +871,9 @@ class FacebookScraper:
                 response = self.session.post(url=url, **kwargs)
             else:
                 response = self.session.get(url=url, **self.requests_kwargs, **kwargs)
+                self.response_1 = response
+                if self.login_remember(response):
+                    response = self.session.get(url=url, **self.requests_kwargs, **kwargs)
                 self.response_2 = response
 
             DEBUG = False
@@ -985,12 +989,6 @@ class FacebookScraper:
                 raise exceptions.LoginError(strong.text)
             # Remember Browser
             response = self.submit_form(response, {"name_action_selected": "save_device"})
-            if "review recent login" in response.text.lower():
-                response = self.submit_form(response)
-                # Login near {location} from {browser} on {OS} ({time}). Unset "This wasn't me", leaving "This was me" set.
-                response = self.submit_form(response, {"submit[This wasn't me]": None})
-                # Remember Browser. Please save the browser that you just verified. You won't have to enter a code when you log in from browsers that you've saved.
-                response = self.submit_form(response, {"name_action_selected": "save_device"})
 
         if "login approval needed" in response.text.lower() or "checkpoint" in response.url:
             if self.raise_if_checkpoint:
@@ -1005,6 +1003,21 @@ class FacebookScraper:
             with open("login_error.html", "w") as f:
                 f.write(response.text)
             raise exceptions.LoginError("Login unsuccessful")
+        self.login_remember(response)
+
+        if "review recent login" in response.text.lower():
+            response = self.submit_form(response)
+            # Login near {location} from {browser} on {OS} ({time}). Unset "This wasn't me", leaving "This was me" set.
+            response = self.submit_form(response, {"submit[This wasn't me]": None})
+            # Remember Browser. Please save the browser that you just verified. You won't have to enter a code when you log in from browsers that you've saved.
+            response = self.submit_form(response, {"name_action_selected": "save_device"})
+
+    def login_remember(self, response):
+        if '/login/device-based/validate-pin/' in response.text.lower():
+            response = self.submit_form(response)
+            print("validate pin")
+            return True
+        return False
 
     def is_logged_in(self) -> bool:
         try:
